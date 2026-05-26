@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "avots": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.avots.ai/",
+        "--header",
+        "Authorization: Bearer av_mcp_YOUR_KEY_HERE"
+      ]
+    }
+  }
+}

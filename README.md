@@ -1,0 +1,73 @@
+# avots-mcp
+
+Official MCP (Model Context Protocol) server for **[avots.ai](https://avots.ai)** - a multi-provider AI platform.
+
+One connection gives you:
+
+- 🖼 **Image generation** - Nano Banana (Gemini 2.5 / 3 Pro / 3.1 Flash), GPT-5 Image, FLUX, Recraft, Ideogram
+- 🎬 **Video generation** - Veo 3.1, Seedance 2.0, Kling v3.0 Pro, Sora 2 Pro, Grok Imagine (async, 1-8 min)
+- 🎵 **Music & audio** - ElevenLabs Music, ACE-Step, Stable Audio
+- 💬 **300+ chat models** - Claude (Sonnet / Opus), GPT-5, Gemini 3, DeepSeek, Sonar, and more - billed through one balance
+
+The server lives at **`https://mcp.avots.ai/`** and speaks the [MCP `2025-06-18` spec](https://modelcontextprotocol.io/specification/2025-06-18) over Streamable HTTP. Tools are billed per call against your avots balance (same balance you'd see on the web app or the Telegram bot).
+
+## Quick start
+
+1. **Sign up at [avots.ai](https://avots.ai)** and mint an MCP key at [Settings → Integrations](https://app.avots.ai/#/settings/integrations) (it looks like `av_mcp_<48hex>`).
+2. **Pick your client** from the table below and follow the linked guide.
+3. **Try it** - ask your client *"generate an image of a fox in a snowy forest"* and watch tokens get spent.
+
+| Client | Guide | Auth model |
+| --- | --- | --- |
+| **Claude.ai web** | [docs/claude-web.md](docs/claude-web.md) | OAuth - paste URL, click Connect, sign in (no token copy-paste) |
+| **Claude Desktop** | [docs/claude-desktop.md](docs/claude-desktop.md) | Bearer token via `mcp-remote` |
+| **Claude Code (CLI)** | [docs/claude-code.md](docs/claude-code.md) | Bearer token via `claude mcp add` |
+| **Cursor** | [docs/cursor.md](docs/cursor.md) | Bearer token via `mcp-remote` |
+| **Cline** | [docs/cline.md](docs/cline.md) | Bearer token via `mcp-remote` |
+| **Any other MCP client** | [docs/tools.md](docs/tools.md) - endpoint + tool list | Bearer header `Authorization: Bearer av_mcp_…` |
+
+Ready-to-paste `mcp.json` snippets live under [`examples/`](examples/).
+
+## What's in the server
+
+Seven tools, all listed in [docs/tools.md](docs/tools.md):
+
+| Tool | Cost | What it does |
+| --- | --- | --- |
+| `check_balance` | free | Current tokens and subscription tier. |
+| `list_models` | free | All active models with per-call cost (filter by `chat`, `image`, `video`, `audio`). |
+| `chat` | ~10-1000 ⚡ | Send a prompt to any chat model. Useful for delegating to GPT, DeepSeek, Sonar, etc. |
+| `generate_image` | ~200-500 ⚡ | Synchronous image gen. Returns an inline `image` block (base64) and a hosted URL. |
+| `generate_video` | ~200-5000 ⚡ | Async video gen with **two-step confirmation**: first call previews the cost and alternative models; second call (`confirmed: true`) actually submits. |
+| `generate_audio` | ~100-800 ⚡ | Music / sound design via ElevenLabs Music, ACE-Step, Stable Audio. |
+| `check_job` | free | Poll an async job (video) by `job_id`. |
+
+> **About the two-step video flow.** Video is the most expensive tool. To avoid surprise spend, `generate_video` returns a preview card the first time it's called (no submit, no reserve). The client (e.g. Claude) shows the cost + alternative models with prices and asks the user. The user confirms, the client re-calls with the chosen `model` + `confirmed: true`, and only then does the job get submitted. On submit error the server returns the same alternatives card - it never silently swaps to a pricier model.
+
+## What you can build
+
+A few things this is actually useful for. Each one chains two or more tools through one connection and one balance.
+
+- **Social ad creative in one prompt.** Generate a hero image (`generate_image` with Nano Banana Pro for quality), turn it into a 5-second motion variant (`generate_video` + `image_url` triggers Seedance i2v automatically), drop in a generated music bed or voiceover (`generate_audio`). End-to-end in under 5 minutes from a single prompt.
+- **Product-photo angle pack.** Hand the model one product shot and ask for the same product from different angles or in different lighting - `generate_image` for stills, `generate_video` + `image_url` for short rotation / parallax clips. Cheaper than reshooting.
+- **Podcast cover art + show notes.** Mint 4 cover-art variations with `generate_image` (`num_images: 4`), then `chat` the same balance into writing the episode description for each. One connection, one billable account.
+- **Storyboard to animatic.** Generate 4 sequential storyboard frames with `generate_image`, then animate each frame to a 3-second clip with `generate_video` + `image_url`. Output: a 12-second rough animatic from a script paragraph.
+- **Vertical Reels / Shorts factory.** Ask for a 9:16 vertical clip (`generate_video aspect_ratio: 9:16`), pair it with a 15-second music bed (`generate_audio`), stitch in any editor. Good for TikTok / Reels / Shorts at scale.
+- **Second-opinion delegation.** Inside Claude.ai or Claude Code, ask `chat` to forward a tricky problem to GPT-5.5 Pro or DeepSeek R1 and compare answers - useful for code reviews, marketing copy reads, or fact-checking when you want a model from a different lineage to weigh in.
+- **Localized brand assets.** `chat` to translate ad copy into target languages, `generate_image` to produce matching visuals tuned to each market's aesthetic. Same workflow per locale.
+
+Cost ranges from ~200⚡ for a single image to ~5000⚡ for a 10-second 1080p Kling Pro clip - run `list_models` (free) at any time for live per-call prices.
+
+## Billing
+
+All tool calls bill against your avots balance, just like the web app and Telegram bot. No separate metering. Daily USD cap (set in Settings) and per-key rate limits apply.
+
+See [pricing.avots.ai](https://avots.ai/pricing) for token packs and subscriptions.
+
+## Issues & feedback
+
+Open an issue here, or write to [hello@avots.ai](mailto:hello@avots.ai). For platform questions (billing, models, web app) the Telegram bot [@AvotsAIbot](https://t.me/AvotsAIbot) is the fastest channel.
+
+## License
+
+[MIT](LICENSE) - feel free to fork the docs, the examples, and anything else here.
