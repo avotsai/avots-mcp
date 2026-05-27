@@ -48,21 +48,27 @@ Seven tools, all listed in [docs/tools.md](docs/tools.md):
 
 A few things this is actually useful for. Each one chains two or more tools through one connection and one balance.
 
-- **Social ad creative in one prompt.** Generate a hero image (`generate_image` with Nano Banana Pro for quality), turn it into a 5-second motion variant (`generate_video` + `image_url` triggers Seedance i2v automatically), drop in a generated music bed or voiceover (`generate_audio`). End-to-end in under 5 minutes from a single prompt.
-- **Product-photo angle pack.** Hand the model one product shot and ask for the same product from different angles or in different lighting - `generate_image` for stills, `generate_video` + `image_url` for short rotation / parallax clips. Cheaper than reshooting.
-- **Podcast cover art + show notes.** Mint 4 cover-art variations with `generate_image` (`num_images: 4`), then `chat` the same balance into writing the episode description for each. One connection, one billable account.
-- **Storyboard to animatic.** Generate 4 sequential storyboard frames with `generate_image`, then animate each frame to a 3-second clip with `generate_video` + `image_url`. Output: a 12-second rough animatic from a script paragraph.
-- **Vertical Reels / Shorts factory.** Ask for a 9:16 vertical clip (`generate_video aspect_ratio: 9:16`), pair it with a 15-second music bed (`generate_audio`), stitch in any editor. Good for TikTok / Reels / Shorts at scale.
-- **Second-opinion delegation.** Inside Claude.ai or Claude Code, ask `chat` to forward a tricky problem to GPT-5.5 Pro or DeepSeek R1 and compare answers - useful for code reviews, marketing copy reads, or fact-checking when you want a model from a different lineage to weigh in.
-- **Localized brand assets.** `chat` to translate ad copy into target languages, `generate_image` to produce matching visuals tuned to each market's aesthetic. Same workflow per locale.
+- **Social ad creative in one prompt** — hero image, animated variant, music bed.
+- **Product-photo angle pack** — one product shot in, four angles + a rotation clip out.
+- **Storyboard to animatic** — four script-driven frames animated into a 12-second rough cut.
+- **Vertical Reels / Shorts factory** — 9:16 clip + matching 15-second music bed, repeatable per video.
+- **Podcast cover art + show notes** — four cover variations and a written episode description for each.
+- **Second-opinion delegation** — forward a tricky problem to a model from a different lineage and compare.
+- **Localized brand assets** — translated copy and locale-tuned visuals across markets.
 
-Cost ranges from ~200⚡ for a single image to ~5000⚡ for a 10-second 1080p Kling Pro clip - run `list_models` (free) at any time for live per-call prices.
+Each of these flows is written out as a runnable script — exact prompt, tool sequence, model picks, cost — in [`docs/recipes.md`](docs/recipes.md).
+
+Cost ranges from ~200⚡ for a single image to ~5000⚡ for a 10-second 1080p Kling Pro clip — run `list_models` (free) at any time for live per-call prices.
 
 ## Billing
 
 All tool calls bill against your avots balance, just like the web app and Telegram bot. No separate metering. Daily USD cap (set in Settings) and per-key rate limits apply.
 
 See [pricing.avots.ai](https://avots.ai/pricing) for token packs and subscriptions.
+
+## Troubleshooting
+
+Common cross-client issues (401s, daily caps, two-step video flow, image rendering, `npx` PATH gotchas) are collected in [`docs/troubleshooting.md`](docs/troubleshooting.md). For client-specific setup, see the per-client guide linked in the table above.
 
 ## Issues & feedback
 
