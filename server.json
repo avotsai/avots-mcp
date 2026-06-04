@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.avotsai/avots-mcp",
+  "title": "avots",
+  "description": "Image, video, audio, face-swap, talking avatars and chat across 300+ AI models, one balance.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/avotsai/avots-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.avots.ai/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Your av_mcp_ API key from avots.ai (Settings -> Integrations), as 'Bearer av_mcp_...'.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
