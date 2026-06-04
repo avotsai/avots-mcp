@@ -6,7 +6,9 @@ One connection gives you:
 
 - 🖼 **Image generation** - Nano Banana (Gemini 2.5 / 3 Pro / 3.1 Flash), GPT-5 Image, FLUX, Recraft, Ideogram
 - 🎬 **Video generation** - Veo 3.1, Seedance 2.0, Kling v3.0 Pro, Sora 2 Pro, Grok Imagine (async, 1-8 min)
-- 🎵 **Music & audio** - ElevenLabs Music, ACE-Step, Stable Audio
+- 🔄 **Face swap** & 🗣 **talking avatars** - swap a face into any video, or make a portrait speak your text (lip-synced)
+- 🎵 **Music & voice** - ElevenLabs Music, ACE-Step, Stable Audio + text-to-speech (ElevenLabs TTS, preset or cloned voices)
+- 📅 **Calendar** - turn "meeting tomorrow at 12" into an event on your linked Apple / Google calendar
 - 💬 **300+ chat models** - Claude (Sonnet / Opus), GPT-5, Gemini 3, DeepSeek, Sonar, and more - billed through one balance
 
 The server lives at **`https://mcp.avots.ai/`** and speaks the [MCP `2025-06-18` spec](https://modelcontextprotocol.io/specification/2025-06-18) over Streamable HTTP. Tools are billed per call against your avots balance (same balance you'd see on the web app or the Telegram bot).
@@ -33,7 +35,7 @@ Ready-to-paste `mcp.json` snippets live under [`examples/`](examples/).
 
 ## What's in the server
 
-Seven tools, all listed in [docs/tools.md](docs/tools.md):
+Ten tools, all listed in [docs/tools.md](docs/tools.md):
 
 | Tool | Cost | What it does |
 | --- | --- | --- |
@@ -42,8 +44,11 @@ Seven tools, all listed in [docs/tools.md](docs/tools.md):
 | `chat` | ~10-1000 ⚡ | Send a prompt to any chat model. Useful for delegating to GPT, DeepSeek, Sonar, etc. |
 | `generate_image` | ~200-500 ⚡ | Synchronous image gen. Returns an inline `image` block (base64) and a hosted URL. |
 | `generate_video` | ~200-5000 ⚡ | Async video gen with **two-step confirmation**: first call previews the cost and alternative models; second call (`confirmed: true`) actually submits. |
-| `generate_audio` | ~100-800 ⚡ | Music / sound design via ElevenLabs Music, ACE-Step, Stable Audio. |
-| `check_job` | free | Poll an async job (video) by `job_id`. |
+| `face_swap_video` | ~500-2000 ⚡ | Async. Swap a face from a photo into a target video, keeping the original motion (pixverse). Two-step confirm. |
+| `generate_talking_avatar` | varies ⚡ | Async. Generate a portrait, speak your text (TTS), and lip-sync it into a talking-head video. Two-step confirm. |
+| `generate_audio` | ~50-800 ⚡ | Music (ElevenLabs Music, ACE-Step, Stable Audio) **or** spoken voice / TTS (ElevenLabs, preset or cloned voices). Async. |
+| `create_calendar_event` | ~5 ⚡ | Turn natural language into an event on a linked Apple/Google calendar, or return an `.ics`. |
+| `check_job` | free | Poll an async job (video / face-swap / avatar) by `job_id`. |
 
 > **About the two-step video flow.** Video is the most expensive tool. To avoid surprise spend, `generate_video` returns a preview card the first time it's called (no submit, no reserve). The client (e.g. Claude) shows the cost + alternative models with prices and asks the user. The user confirms, the client re-calls with the chosen `model` + `confirmed: true`, and only then does the job get submitted. On submit error the server returns the same alternatives card - it never silently swaps to a pricier model.
 

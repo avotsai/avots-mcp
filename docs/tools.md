@@ -1,6 +1,6 @@
 # avots-mcp tools reference
 
-The server registers seven tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
+The server registers ten tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
 
 ## Free tools (no token cost)
 
@@ -14,7 +14,7 @@ Lists every active model on avots with its per-call cost in internal tokens. Acc
 
 ### `check_job`
 
-Polls an async generation job (created by `generate_video`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
+Polls an async generation job (created by `generate_video`, `face_swap_video`, or `generate_talking_avatar`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
 
 ## Paid tools
 
@@ -67,18 +67,60 @@ Arguments:
 
 Cost: ~200-5000 ⚡ depending on model + duration + resolution.
 
-### `generate_audio`
+### `face_swap_video`
 
-Synchronous music / audio generation via ElevenLabs Music, ACE-Step, Stable Audio. Blocks 10-60 seconds.
+Async face swap: replace the face in a **target video** with a face from a **source photo**, keeping the original motion and scene (powered by `fal-ai/pixverse`). Same **two-step confirmation** as `generate_video` (preview without `confirmed`, submit with `confirmed: true`). Returns a `job_id` - poll `check_job` until `completed`.
 
 Arguments:
 
-- `prompt` (required) - music description: genre, mood, instruments, tempo, era, reference artists.
-- `model` - model id (audio category from `list_models`). Default `fal:fal-ai/elevenlabs/music`.
-- `duration` - 5..180 seconds. Default 30.
-- `lyrics` - optional, for vocal generation (ElevenLabs Music supports this).
+- `target_video_url` (required) - the video whose face is replaced. External `https://` URL or an avots-hosted `/v1/files/<uuid>` URL.
+- `face_image_url` (required) - the source face photo (a close-up head-and-shoulders portrait works best). External URL or avots-hosted.
+- `confirmed` - boolean, default `false`. Required `true` to submit; otherwise you get the cost preview.
+
+Cost: ~500-2000 ⚡ (per second of the target clip).
+
+### `generate_talking_avatar`
+
+Make a short video of a **portrait speaking your text**. The server generates a front-facing portrait from your description, turns the text into speech (ElevenLabs TTS, auto-detects language incl. Russian), and lip-syncs the face. Async - returns a `job_id`; poll `check_job` (lip-sync is slow: HD / OmniHuman can take several minutes; the fast tier ~1-2 min).
+
+Arguments:
+
+- `portrait_prompt` (required) - what the avatar looks like, a real human face, e.g. "a young woman with brown hair and blue eyes, warm smile".
+- `text` (required) - the exact words to say, read verbatim (no stage directions). Up to ~500 chars (~30s).
+- `voice` - a preset (Aria, Sarah, Charlotte, Matilda / Roger, George, Charlie, Brian) or the user's own cloned voice by name. Default Aria. The cost preview (`confirmed: false`) lists the user's cloned voice names.
+- `tier` - `quality` (OmniHuman, HD, most realistic, slower; default) or `fast` (SadTalker, 256p, ~1-2 min).
+- `style` - optional portrait style: `photo` (default), `cinema`, `3d`, `anime`.
+- `confirmed` - boolean. Must be `true` to submit; omit/false for a cost-only preview.
+
+Cost: varies (portrait + TTS + lip-sync); see the preview card.
+
+### `generate_audio`
+
+Generate **music** OR **spoken voice / TTS** (`fal:*` models only). Async - returns a `job_id`; poll `check_job` until `completed` (usually 10-120s).
+
+- **Music**: `fal:fal-ai/elevenlabs/music` (default, vocal + instrumental), `fal:fal-ai/musicgen`, `fal:fal-ai/stable-audio-25/text-to-audio`, `fal:fal-ai/ace-step`. Avoid brand / copyright terms (e.g. "Pixar", "Disney") - ElevenLabs Music rejects them with 422.
+- **Spoken voice / narration**: model `fal:fal-ai/elevenlabs/tts/turbo-v2.5`, put the exact words in `prompt` (verbatim, no stage directions), auto-detects language incl. Russian.
+
+Arguments:
+
+- `prompt` (required) - music description, or the exact text to speak (TTS).
+- `model` - audio model id from `list_models`. Default `fal:fal-ai/elevenlabs/music`.
+- `duration` - 5..180 seconds. Default 30 (music).
+- `lyrics` - optional lyrics for vocal music.
+- `voice` - **TTS only**: a preset (Aria, Sarah, Charlotte, Matilda / Roger, George, Charlie, Brian) or the user's own cloned voice by name. Default Aria. Ignored by music models.
 
 Cost: ~100-800 ⚡.
+
+### `create_calendar_event`
+
+Turn a natural-language description ("meeting tomorrow at 12 with Igor at the office", "dentist friday 9am") into a calendar event. Publishes to the user's linked backend: **Apple Calendar** (iCloud) or **Google Calendar** if linked in `/settings/calendar`; otherwise returns an `.ics` file the client offers as a download. Cost ~5 ⚡ (LLM extraction).
+
+Arguments:
+
+- `description` (required) - natural-language event incl. the time reference.
+- `timezone` - optional IANA tz (e.g. `Europe/Riga`). Falls back to the user's saved tz, ultimately `Europe/London`.
+
+Returns `{ ok, backend: "icloud"|"google"|"none", event: {title, start_iso, end_iso, location}, event_url? (backend != none), ics_b64? (backend = none) }`.
 
 ## Common patterns
 
