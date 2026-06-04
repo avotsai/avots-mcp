@@ -24,6 +24,9 @@ The server lives at **`https://mcp.avots.ai/`** and speaks the [MCP `2025-06-18`
 | **Claude Code (CLI)** | [docs/claude-code.md](docs/claude-code.md) | Bearer token via `claude mcp add` |
 | **Cursor** | [docs/cursor.md](docs/cursor.md) | Bearer token via `mcp-remote` |
 | **Cline** | [docs/cline.md](docs/cline.md) | Bearer token via `mcp-remote` |
+| **openclaw** | [docs/openclaw.md](docs/openclaw.md) | Native remote - Bearer header, no bridge |
+| **LibreChat** | [docs/librechat.md](docs/librechat.md) | Native remote - Bearer header, no bridge |
+| **Continue.dev** | [docs/continue.md](docs/continue.md) | Native remote - Bearer header, no bridge |
 | **Any other MCP client** | [docs/tools.md](docs/tools.md) - endpoint + tool list | Bearer header `Authorization: Bearer av_mcp_…` |
 
 Ready-to-paste `mcp.json` snippets live under [`examples/`](examples/).

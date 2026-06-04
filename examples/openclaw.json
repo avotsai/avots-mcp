@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "servers": {
+      "avots": {
+        "url": "https://mcp.avots.ai/",
+        "transport": "streamable-http",
+        "headers": {
+          "Authorization": "Bearer av_mcp_YOUR_KEY_HERE"
+        }
+      }
+    }
+  }
+}

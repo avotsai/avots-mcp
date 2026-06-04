@@ -119,7 +119,7 @@ Four cover-art variations and a written episode description for each. One connec
 **What happens:**
 
 1. `generate_image` with `num_images: 4`, `aspect_ratio: 1:1`. The tool returns all four in one call.
-2. `chat` with `model: anthropic/claude-opus-4.7` (or `openai/gpt-5.5-pro`), prompt = the episode brief + a short description of each generated image.
+2. `chat` with `model: anthropic/claude-opus-4.8` (or `openai/gpt-5.5-pro`), prompt = the episode brief + a short description of each generated image.
 
 **Typical cost:** ~1000⚡ image batch + ~50⚡ chat ≈ **1050⚡** (~€1.05).
 
@@ -166,7 +166,7 @@ Translate ad copy into target languages, generate matching visuals tuned to each
 
 **What happens:**
 
-1. One `chat` call with `model: anthropic/claude-opus-4.7` (or any chat model strong at translation). Returns all four translations in one response.
+1. One `chat` call with `model: anthropic/claude-opus-4.8` (or any chat model strong at translation). Returns all four translations in one response.
 2. Four `generate_image` calls in parallel, each with a locale-tuned prompt.
 
 **Typical cost:** ~100⚡ translation + 4 × ~400⚡ images ≈ **1700⚡** (~€1.70) for a four-locale launch.

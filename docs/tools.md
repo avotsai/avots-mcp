@@ -25,7 +25,7 @@ Send a prompt to any active chat model on avots - useful when the user wants Cla
 Arguments:
 
 - `prompt` (required) - the user / system prompt.
-- `model` - OR model id (e.g. `anthropic/claude-opus-4.7`, `openai/gpt-5.5-pro`, `deepseek/deepseek-r1`, `perplexity/sonar-pro`). Default: `anthropic/claude-sonnet-4.6`.
+- `model` - OR model id (e.g. `anthropic/claude-opus-4.8`, `openai/gpt-5.5-pro`, `deepseek/deepseek-r1`, `perplexity/sonar-pro`). Default: `anthropic/claude-sonnet-4.6`.
 
 Cost: ~10-1000 ⚡ depending on model + prompt size.
 

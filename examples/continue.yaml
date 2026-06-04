@@ -1,0 +1,9 @@
+# Add to ~/.continue/config.yaml. avots MCP is a remote Streamable HTTP server.
+# The Bearer header goes under requestOptions.headers.
+mcpServers:
+  - name: avots
+    type: streamable-http
+    url: https://mcp.avots.ai/
+    requestOptions:
+      headers:
+        Authorization: Bearer av_mcp_YOUR_KEY_HERE

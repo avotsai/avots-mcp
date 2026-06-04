@@ -1,0 +1,8 @@
+# Add to librechat.yaml (top level). avots MCP is a remote Streamable HTTP
+# server, so no mcp-remote bridge (and no Node) is needed.
+mcpServers:
+  avots:
+    type: streamable-http
+    url: "https://mcp.avots.ai/"
+    headers:
+      Authorization: "Bearer av_mcp_YOUR_KEY_HERE"
