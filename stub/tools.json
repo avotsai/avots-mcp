@@ -1,0 +1,466 @@
+{
+    "tools": [
+        {
+            "name": "check_balance",
+            "description": "Get the current avots.ai token balance AND the FULL pricing catalog (welcome pack if eligible + all 5 monthly subscriptions: Starter €4.90 / Beginner €14.90 / Fullhouse €34.90 / Complete €69.90 / VIP €149.90). Free (no tokens consumed). Each plan row carries token amount + price + an auto-login checkout URL. When the user asks \"сколько у меня?\", \"какие есть тарифы?\", \"what plans do you have?\", or runs out of balance — return the FULL list verbatim from this tool. Do NOT search the web for our pricing — there is no public pricing page; this tool is the single source of truth. Quote every plan and its checkout URL so the user can compare and click any of them to subscribe in one tap.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
+        },
+        {
+            "name": "list_models",
+            "description": "List all generation models currently available on avots.ai with their per-call cost in tokens. Free. Filter by category (chat|image|video|audio|search). Use this when the user asks \"what models can you use\" or before generate_image / generate_video to pick the right one.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "chat",
+                            "image",
+                            "video",
+                            "audio",
+                            "search",
+                            "all"
+                        ],
+                        "description": "Filter by category, or \"all\" for everything (default)."
+                    }
+                }
+            }
+        },
+        {
+            "name": "list_avatars",
+            "description": "List the user's SAVED avatars — reusable face identities, the visual equivalent of cloned voices. Free, no tokens. Returns [{id, name, image, voice}] where `voice` is the avatar's default cloned-voice name (may be empty). A saved avatar is a stored front-facing head-and-shoulders portrait that recurs IDENTICALLY across videos. Use it instead of describing a face in words: pass the avatar's NAME as `avatar` to generate_talking_avatar (reuses the exact same face every time, no per-call drift), or pass `avatar:<id>` as face_swap_video.face_image_url. Saved avatars are created in the avots app / Telegram (a generated talking-avatar can be saved) or via create_avatar.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
+        },
+        {
+            "name": "create_avatar",
+            "description": "Save a reusable AVATAR (a face identity) so it can be reused by name across talking-avatar and face-swap videos (then it shows in list_avatars). Provide a `name` plus EITHER `image_url` (a ready front-facing head-and-shoulders portrait — FREE: stored + face-checked) OR `portrait_prompt` (the server GENERATES a portrait, ~200-500 tokens — two-step: call WITHOUT `confirmed` for a cost preview, then again with confirmed=true). Optional `voice` sets the avatar's default cloned voice (used automatically later). The image must show ONE person facing the camera; a full-body photo drags clothing into face-swaps. Returns {id, name, voice}. Same avatar store as the avots app / Telegram; limit 20 per account.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "A short label for this avatar, used to reference it later, e.g. \"Artur\". Best kept unique per account."
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "description": "Public https:// URL (or avots /v1/files/<uuid>) of a ready front-facing head-and-shoulders portrait of ONE person. FREE — stored + face-checked. Provide this OR portrait_prompt."
+                    },
+                    "portrait_prompt": {
+                        "type": "string",
+                        "description": "Describe a face to GENERATE and save, e.g. \"a young woman with brown hair and blue eyes, warm smile\". Charges for one image gen (~200-500 tokens) and needs confirmed=true. Provide this OR image_url."
+                    },
+                    "voice": {
+                        "type": "string",
+                        "description": "Optional default voice for this avatar (a preset name or one of the user's cloned voices). Auto-used by generate_talking_avatar when no voice is passed."
+                    },
+                    "style": {
+                        "type": "string",
+                        "description": "Optional portrait style for generate mode: \"photo\" (default), \"cinema\", \"3d\", \"anime\"."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Required to generate+save when using portrait_prompt (it charges). Not needed for image_url (free). Omit for a cost preview."
+                    }
+                }
+            }
+        },
+        {
+            "name": "generate_image",
+            "description": "Generate one or more images from a text prompt. Blocks 5-60 seconds (OR sync ~5-30s, Fal queue ~10-60s) and returns the image both as a native MCP `image` content block (base64) AND as a hosted URL. Cost ~200-500 tokens per image. Use for pictures, photos, illustrations, logos, posters, banners, art, avatars, etc. The image is ALREADY shown to the user by the MCP client — do NOT re-embed it as markdown `![](url)` in your reply. On Claude.ai web specifically, a markdown image URL is rendered as a \"Show Image\" button (not an inline preview), so re-embedding actively makes the UX worse. Just describe / discuss the result in plain text; the user already sees the picture. If they ask for the link to download, quote the hosted URL as plain text (not as markdown image). User aliases to resolve when they say a model name: \"nano banana\"/\"нано банана\" → google/gemini-2.5-flash-image, \"nano banana pro\" → google/gemini-3-pro-image-preview, \"nano banana 2\" → google/gemini-3.1-flash-image-preview, \"gpt-5 image\"/\"gpt image\" → openai/gpt-5-image-mini, \"flux\"/\"flux pro\"/\"флюкс\" → fal:fal-ai/flux-pro/v1.1, \"flux dev\" → fal:fal-ai/flux/dev, \"ideogram\"/\"идеограм\" → fal:fal-ai/ideogram/v3, \"recraft\"/\"рекрафт\" → fal:fal-ai/recraft-v3. Models grouped by provider — pick by need: TEXT-IN-IMAGE → fal:fal-ai/ideogram/v3 (best typography), VECTOR / LOGO / POSTER → fal:fal-ai/recraft-v3, PHOTOREAL / MAX QUALITY → fal:fal-ai/flux-pro/v1.1 or google/gemini-3-pro-image-preview, FAST / CHEAP → google/gemini-2.5-flash-image (Nano Banana) or fal:fal-ai/flux/dev, SQUARE ONLY → openai/gpt-5-image-mini (server auto-swaps to Nano Banana on non-1:1 requests). Fal models (fal:* prefix) run through async queue but the tool blocks until the result is ready — caller does NOT need to poll check_job for images.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "Detailed description of the desired image. Be specific: subject, style, lighting, composition, color palette."
+                    },
+                    "model": {
+                        "type": "string",
+                        "enum": [
+                            "google/gemini-2.5-flash-image",
+                            "google/gemini-3-pro-image-preview",
+                            "google/gemini-3.1-flash-image-preview",
+                            "openai/gpt-5-image-mini",
+                            "fal:fal-ai/flux-pro/v1.1",
+                            "fal:fal-ai/flux/dev",
+                            "fal:fal-ai/ideogram/v3",
+                            "fal:fal-ai/recraft-v3"
+                        ],
+                        "description": "Image model. Default: google/gemini-2.5-flash-image (Nano Banana — fast, cheap, reliable aspect). Pick by need: gemini-3-pro for max-quality photoreal, gemini-3.1-flash for latest Google features, gpt-5-image-mini for 1:1 OpenAI style, fal:fal-ai/flux-pro/v1.1 for photoreal+detail, fal:fal-ai/flux/dev for cheap FLUX, fal:fal-ai/ideogram/v3 for text-in-image / typography, fal:fal-ai/recraft-v3 for vector / logo / poster. Fal models block 10-60s; OR models block 5-30s."
+                    },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "enum": [
+                            "1:1",
+                            "16:9",
+                            "9:16",
+                            "4:3",
+                            "3:4"
+                        ],
+                        "description": "Output aspect ratio (default 1:1)."
+                    },
+                    "num_images": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4,
+                        "description": "How many variations to generate (default 1)."
+                    }
+                }
+            }
+        },
+        {
+            "name": "chat",
+            "description": "Send a prompt to ANY chat model on avots.ai (Claude, GPT, Gemini, DeepSeek, Sonar, etc.) and get the response. Useful when you (Claude in the MCP client) want to delegate a sub-task to a different model — e.g. \"have GPT-5.5 Pro double-check this reasoning\" or \"ask DeepSeek R1 for a contrarian view\". Cost ~10-1000 tokens depending on model + prompt size.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The user/system prompt for the chat model."
+                    },
+                    "model": {
+                        "type": "string",
+                        "description": "OR model id (e.g. anthropic/claude-opus-4.8, openai/gpt-5.5-pro, deepseek/deepseek-r1, perplexity/sonar-pro). Default: anthropic/claude-sonnet-4.6."
+                    }
+                }
+            }
+        },
+        {
+            "name": "generate_video",
+            "description": "Submit a video generation job. ASYNC — returns a job_id; the caller MUST poll check_job until status=\"completed\". Cost is duration-based, roughly 200-5000 tokens depending on model+resolution. Supports image-to-video when image_url is provided (if no aspect_ratio is set and image_url points at an avots-hosted file, the server infers aspect from the source image dimensions). TWO-STEP FLOW (mirrors the Telegram bot UX — confirmation is REQUIRED before a video job is submitted, because video is the most expensive tool and the user must explicitly approve the spend): STEP 1 (preview) — call generate_video WITHOUT `confirmed` (or with confirmed=false). The tool does NOT submit anything, does NOT reserve any tokens. It returns the estimated cost for the selected model plus a sorted list of alternative video models with their prices for the same params. Show this list to the user, ask which model they want. STEP 2 (submit) — call generate_video again with the user-chosen `model` AND `confirmed=true`. Only then is the job submitted and tokens reserved. ON SUBMIT ERROR — the tool does NOT auto-switch to another model. It returns the error description plus the same alternatives-with-prices list so the user can pick a different one. Do NOT silently retry with a different model — always show the user the error + alternatives and let them choose. Typical wall-clock duration 1-8 minutes (provider queues vary — Seedance can sit queued 5+ min during peak). DO NOT give up before 10 minutes; do NOT tell the user the job failed unless check_job explicitly returns status=\"failed\". User aliases: \"seedance\"/\"сидэнс\" → orv:bytedance/seedance-2.0, \"seedance 1.5\"/\"seedance pro\" → orv:bytedance/seedance-1-5-pro, \"veo\"/\"veo 3.1\"/\"вео\" → orv:google/veo-3.1, \"veo fast\" → orv:google/veo-3.1-fast, \"kling\"/\"клинг\" → orv:kwaivgi/kling-v3.0-pro, \"sora\"/\"сора\" → orv:openai/sora-2-pro, \"grok imagine\"/\"грок\" → orv:x-ai/grok-imagine-video. Two model families: • Fal.ai endpoints (prefix fal:) — Veo 3.1 (fal:fal-ai/veo3 / fal:fal-ai/veo3/fast), Kling 2.1 (fal:fal-ai/kling-video/v2.1/{standard|pro}), Sora. • OpenRouter Video endpoints (prefix orv:) — Seedance 2.0 (orv:bytedance/seedance-2.0, recommended for i2v character consistency), Seedance 1.5 Pro (cheapest with audio), Grok Imagine. Use for any user request involving video, animations, motion, clips, montages, ad creatives, social-media reels, or \"make X come to life\".",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "Detailed scene description: subject, action, camera movement, lighting, style."
+                    },
+                    "model": {
+                        "type": "string",
+                        "description": "Model id from list_models (video category). Default: orv:bytedance/seedance-2.0 (great character consistency, cheap, i2v-capable). Other good choices: fal:fal-ai/veo3/fast (fastest, narrative camera moves), fal:fal-ai/kling-video/v2.1/standard (anime/stylised)."
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 15,
+                        "description": "Clip length in seconds (default 5)."
+                    },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "enum": [
+                            "16:9",
+                            "9:16",
+                            "1:1",
+                            "4:3",
+                            "3:4",
+                            "21:9"
+                        ],
+                        "description": "Output aspect ratio (default 16:9). Prefer 9:16 for TikTok/Reels/Shorts."
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "enum": [
+                            "480p",
+                            "720p",
+                            "1080p"
+                        ],
+                        "description": "Output resolution (default 720p)."
+                    },
+                    "audio": {
+                        "type": "boolean",
+                        "description": "Whether to REQUEST native audio generation from models that expose an explicit toggle (default false). Important: this flag only controls the request — it does NOT determine whether the returned video has sound. Several models (Kling v3.0 Pro, Veo 3.x variants, Sora) generate audio natively whether or not this flag is set; others (Seedance 2.0, Grok Imagine) produce silent video regardless. The server does not currently probe the resulting mp4 to detect audio streams, so when reporting back to the user do NOT claim \"video has no sound\" based on this flag — say \"play to hear\" or simply do not comment on audio unless the user asks."
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "description": "Optional first-frame image URL or data: URI for image-to-video. Seedance and Veo/Kling endpoints auto-swap to the i2v variant when this is provided."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true ONLY after the user has explicitly approved the selected model + cost. Without this flag (or with false), the tool returns a preview card with estimated cost + alternative models — it does NOT submit. This guards users from accidental spend on the most expensive tool."
+                    }
+                }
+            }
+        },
+        {
+            "name": "face_swap_video",
+            "description": "Swap a face in a target VIDEO with a source face from a photo, keeping the original motion + scene (powered by fal-ai/pixverse). ASYNC — returns a job_id; the caller MUST poll check_job until status=\"completed\". Cost is duration-based (per second of the target clip), roughly 500-2000 tokens. TWO-STEP FLOW (confirmation REQUIRED, like generate_video — this is an expensive job): STEP 1 (preview) call WITHOUT `confirmed` → returns the estimated cost, submits nothing, reserves nothing. STEP 2 (submit) call again with confirmed=true → submits the job and reserves tokens. IMPORTANT: the model has NO face-only mode and takes no text prompt — it transfers the whole person from the source photo, so for a clean result the FACE PHOTO must be a head-and-shoulders portrait. A full-body source photo will drag the clothing into the result. Tell the user this if their source looks full-body. Use for \"put my face in this video\", \"face-swap this clip\", \"replace the actor's face\", reaction/meme videos, etc.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "target_video_url",
+                    "face_image_url"
+                ],
+                "properties": {
+                    "target_video_url": {
+                        "type": "string",
+                        "description": "URL of the target video whose face will be replaced. Accepts an external https:// URL or an avots-hosted /v1/files/<uuid> URL."
+                    },
+                    "face_image_url": {
+                        "type": "string",
+                        "description": "Source face. A URL (external https:// or an avots-hosted /v1/files/<uuid>) of a close-up head-and-shoulders portrait. OR reuse a SAVED avatar: pass \"avatar:<id>\" or \"avatar:<name>\" (see list_avatars) to use that stored face."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true ONLY after the user has approved the spend. Without it (or false), the tool returns a preview card with estimated cost and does NOT submit."
+                    }
+                }
+            }
+        },
+        {
+            "name": "generate_audio",
+            "description": "Generate music OR spoken voice / narration (fal:* models only). ASYNC — returns a job_id; the caller MUST poll check_job until status=\"completed\" (usually 10-120s). Returns hosted MP3/WAV URLs on completion. Cost typically 50-800 tokens depending on model+duration. MUSIC models: fal:fal-ai/elevenlabs/music (default, vocal+instrumental), fal:fal-ai/musicgen, fal:fal-ai/stable-audio-25/text-to-audio, fal:fal-ai/ace-step. SPOKEN VOICE / TTS / narration: use model \"fal:fal-ai/elevenlabs/tts/turbo-v2.5\" and put the EXACT words to speak in `prompt` (read verbatim — do NOT add stage directions like \"read warmly\", just the text); pass `voice` to pick a preset (Aria, Sarah, Charlotte, Matilda, Roger, George, Charlie, Brian) or the user's OWN cloned voice by name — default Aria; auto-detects language (incl. Russian). NOTE: OpenAI/Google audio models (openai/gpt-audio*, google/lyria*) are NOT usable here — fal:* only. Avoid brand/copyright terms (e.g. \"Pixar\", \"Disney\") in music prompts — ElevenLabs Music rejects them with 422.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "Music description: genre, mood, instruments, tempo, era, reference artists."
+                    },
+                    "model": {
+                        "type": "string",
+                        "description": "Model id from list_models (audio category). Default: fal:fal-ai/elevenlabs/music."
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "minimum": 5,
+                        "maximum": 180,
+                        "description": "Length in seconds (default 30)."
+                    },
+                    "lyrics": {
+                        "type": "string",
+                        "description": "Optional lyrics for vocal generation (ElevenLabs Music supports this)."
+                    },
+                    "voice": {
+                        "type": "string",
+                        "description": "TTS only (model fal:fal-ai/elevenlabs/tts/turbo-v2.5). A preset: Aria, Sarah, Charlotte, Matilda (female) or Roger, George, Charlie, Brian (male) — default Aria. OR the user's OWN cloned voice by name (clones are made in the avots app / Telegram; a clone routes to MiniMax). Ignored by music models."
+                    }
+                }
+            }
+        },
+        {
+            "name": "generate_talking_avatar",
+            "description": "Make a short video of a PORTRAIT speaking the user's text (a \"talking avatar\"). The server generates a front-facing portrait from your description, turns the text into speech (ElevenLabs TTS, auto-detects language incl. Russian), and lip-syncs the face to it. ASYNC — returns a job_id; the caller MUST poll check_job until status=\"completed\" (lip-sync is SLOW — HD/OmniHuman can take several minutes; the fast tier ~1-2 min). Returns a hosted MP4 URL on completion. TWO-STEP FLOW (confirmation REQUIRED — this reserves tokens): STEP 1 (preview) call WITHOUT `confirmed` → returns the estimated cost (portrait + voice + lip-sync), submits nothing, reserves nothing. Show the cost, ask the user. STEP 2 (submit) call again with confirmed=true → generates the portrait, reserves tokens, and starts the render; returns the job_id. Cost typically 600-2500 tokens depending on tier + text length.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "text"
+                ],
+                "properties": {
+                    "avatar": {
+                        "type": "string",
+                        "description": "OPTIONAL — reuse a SAVED avatar (its exact stored face) instead of generating a new one. Pass the avatar's name OR id (see list_avatars; the confirmed=false preview also lists them under `avatars`). When set, the saved portrait is used directly (best lip-sync, identical face every time) and `portrait_prompt` is ignored. If the avatar has a default voice and you do not pass `voice`, that default is used. Provide EITHER `avatar` OR `portrait_prompt`."
+                    },
+                    "portrait_prompt": {
+                        "type": "string",
+                        "description": "What the avatar LOOKS like — a front-facing person. e.g. \"a young woman with brown hair and blue eyes, warm smile\". Describe a real human face (the lip-sync needs one). Required UNLESS `avatar` is given. Note: a fresh face is generated each call, so the look will vary slightly between videos; use `avatar` for a consistent recurring character."
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "The EXACT words the avatar should SAY, read verbatim (no stage directions). Up to ~500 chars (~30s of speech)."
+                    },
+                    "voice": {
+                        "type": "string",
+                        "description": "Voice. A preset: Aria, Sarah, Charlotte, Matilda (female) or Roger, George, Charlie, Brian (male) — default Aria. OR the user's OWN cloned voice: pass its name (cloned voices are made in the avots app / Telegram). The cost-only preview (confirmed=false) lists the user's available cloned voice names. If a saved `avatar` has a default voice and this is omitted, that default is used."
+                    },
+                    "tier": {
+                        "type": "string",
+                        "enum": [
+                            "quality",
+                            "fast"
+                        ],
+                        "description": "\"quality\" = OmniHuman, HD + most realistic, slower (default). \"fast\" = SadTalker, simpler 256p but ~1-2 min."
+                    },
+                    "style": {
+                        "type": "string",
+                        "description": "Optional portrait style, e.g. \"photo\" (default, realistic), \"cinema\", \"3d\", \"anime\"."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Must be true to actually submit + reserve tokens. Omit/false for a cost-only preview."
+                    }
+                }
+            }
+        },
+        {
+            "name": "lipsync_video",
+            "description": "Re-sync the lips in an existing talking VIDEO to NEW speech — video dubbing / re-voicing (powered by fal-ai/sync-lipsync). ASYNC — returns a job_id; the caller MUST poll check_job until status=\"completed\" (usually 1-3 min). Returns a hosted MP4 URL on completion. TWO INPUT MODES: (A) provide `text` = the NEW words to say, and the server voices them with ElevenLabs TTS (auto-detects language incl. Russian; pick a `voice` preset) then lip-syncs; OR (B) provide `audio_url` = a ready voice/audio track to sync to (then `text`/`voice` are ignored). Exactly one of `text` or `audio_url` is required, plus `video_url`. The source clip must be a short talking-head video (front-facing face, max 20 seconds — longer clips are rejected; trim first). Use for \"make this video say X\", \"dub this clip\", \"re-voice this video\", \"change what the person says\". This is DIFFERENT from generate_talking_avatar (which makes a NEW talking face from a still portrait); lipsync_video edits an EXISTING video. TWO-STEP FLOW (confirmation REQUIRED — this reserves tokens): STEP 1 (preview) call WITHOUT `confirmed` → returns the estimated cost (TTS + lip-sync), submits nothing, reserves nothing. STEP 2 (submit) call again with confirmed=true → submits the job and reserves tokens. Cost typically 300-600 tokens.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "video_url"
+                ],
+                "properties": {
+                    "video_url": {
+                        "type": "string",
+                        "description": "URL of the talking-head video to re-sync (max 20s, clear front-facing face). Accepts an external https:// URL or an avots-hosted /v1/files/<uuid> URL."
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Mode A: the NEW words the person should say (any language, read verbatim — no stage directions). Up to ~500 chars. Either this OR audio_url is required."
+                    },
+                    "voice": {
+                        "type": "string",
+                        "description": "Mode A only: TTS voice preset — Aria, Sarah, Charlotte, Matilda (female) or Roger, George, Charlie, Brian (male). Default Aria. Ignored when audio_url is given."
+                    },
+                    "audio_url": {
+                        "type": "string",
+                        "description": "Mode B: URL of a ready audio/voice track to lip-sync the video to (external https:// or avots /v1/files/<uuid>). When given, text/voice are ignored."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Must be true to actually submit + reserve tokens. Omit/false for a cost-only preview."
+                    }
+                }
+            }
+        },
+        {
+            "name": "generate_vlog",
+            "description": "Create a short VERTICAL talking-head vlog clip for Shorts / TikTok / Reels (an AI-influencer \"viral vlog\") — a character speaks a punchy line about a topic, with NATIVE synced audio + lip-sync (powered by HappyHorse 1.0). ASYNC — returns a job_id; poll check_job until status=\"completed\" (usually 1-3 min). Returns a hosted MP4 URL. Provide a `topic` (what the vlog is about — the server WRITES a short punchy spoken line from it) plus a character: either `character` = a text description (server generates a matching portrait) OR `character_url` = a photo URL to animate. duration 3-15s, resolution 720p|1080p, aspect 9:16 (default, vertical) | 1:1 | 16:9 (aspect applies to a GENERATED character; an uploaded photo keeps its own aspect). This is DIFFERENT from generate_talking_avatar (a portrait that reads YOUR exact text): generate_vlog writes the script from a topic and is tuned for short vertical social clips. TWO-STEP FLOW (confirmation REQUIRED — reserves tokens): STEP 1 (preview) call WITHOUT `confirmed` → returns the estimated cost, submits nothing. STEP 2 (submit) call again with confirmed=true.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "topic"
+                ],
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "What the vlog is about (any language). The server expands it into one short, punchy spoken line. e.g. \"a surprising fact about space\"."
+                    },
+                    "character": {
+                        "type": "string",
+                        "description": "Text description of the on-camera character; the server generates a matching portrait. e.g. \"friendly young blogger in a hoodie, city background\". Either this OR character_url is required."
+                    },
+                    "character_url": {
+                        "type": "string",
+                        "description": "URL of a portrait photo to animate instead of generating one (external https:// or avots /v1/files/<uuid>). Overrides `character`."
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "description": "Clip length in seconds, 3-15 (default 5)."
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "description": "720p (default, cheaper) or 1080p."
+                    },
+                    "aspect": {
+                        "type": "string",
+                        "description": "9:16 (default, vertical for Shorts/TikTok), 1:1, or 16:9. Applies to a generated character; an uploaded photo keeps its aspect."
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Must be true to actually submit + reserve tokens. Omit/false for a cost-only preview."
+                    }
+                }
+            }
+        },
+        {
+            "name": "create_calendar_event",
+            "description": "Schedule a calendar event from a natural-language description (\"meeting tomorrow at 12 with Igor at the office\", \"remind me friday 9am dentist\"). Cost ~5⚡ for the LLM extraction. The event is published to the user's linked backend: if they have linked Apple Calendar in /settings/calendar, the event lands directly in iCloud; if they linked Google Calendar, it lands there; otherwise the response carries an .ics file the client should offer as a download. ALWAYS pass timezone=IANA when you know it (e.g. user mentioned a city or you have their location); otherwise the user's saved tz from /settings is used, falling back to Europe/London. Returns: {ok, backend: \"icloud\"|\"google\"|\"none\", event: {title, start_iso, end_iso, location}, event_url? (when backend!=none), ics_b64? (when backend=none).",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "description"
+                ],
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "Natural-language description of the event including the time reference. Examples: \"meeting with Igor tomorrow at 12 in the office\", \"dentist friday 9am\", \"team standup mondays 10am\" (recurring is not yet supported - falls back to one-time on the next matching date)."
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "Optional IANA timezone (e.g. Europe/Riga, America/New_York). Falls back to the user's saved timezone in /settings/calendar; ultimately Europe/London if unset."
+                    }
+                }
+            }
+        },
+        {
+            "name": "create_montage",
+            "description": "Assemble a slideshow VIDEO reel from 4-25 photos — Ken Burns zoom/pan on each photo + smooth crossfade transitions + an optional music track. Local render (no AI model), flat ~200⚡. ASYNC — returns a job_id; poll check_job until status=\"completed\" (usually under a minute). Returns a hosted MP4 URL. Use when the user wants a photo montage / slideshow / \"turn these pictures into a video / reel\". Photos appear in the order given.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "image_urls"
+                ],
+                "properties": {
+                    "image_urls": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "4-25 image URLs in the order they should appear. Each is an external https:// URL or an avots-hosted /v1/files/<uuid> URL. External URLs are fetched + stored."
+                    },
+                    "music": {
+                        "type": "string",
+                        "description": "Background music preset: \"upbeat\", \"chill\", \"epic\", or \"none\" (default none)."
+                    },
+                    "aspect": {
+                        "type": "string",
+                        "description": "9:16 (default, vertical for Reels/TikTok/Shorts), 1:1, or 16:9."
+                    }
+                }
+            }
+        },
+        {
+            "name": "create_travel_poster",
+            "description": "Turn a face photo into a vintage TRAVEL POSTER: the person sits on a giant 3D map of a chosen country surrounded by its landmarks, a passport, postage stamps, a brass compass and the country name in big serif caps (the viral \"Morocco / Japan\" travel-poster look). A face-only photo gets a full body drawn in. SYNCHRONOUS — returns a hosted image URL directly (NO check_job needed). Cost ~200-500 tokens. The 24 curated countries render best (Morocco, Japan, Italy, France, Spain, Greece, Turkey, Egypt, India, Thailand, UAE, USA, Mexico, Brazil, Iceland, Switzerland, UK, Portugal, Bali, China, Peru, Australia, Georgia, Maldives) but ANY country name works. To then animate it into a Stories clip, pass the returned URL to generate_video (image-to-video).",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "image_url",
+                    "country"
+                ],
+                "properties": {
+                    "image_url": {
+                        "type": "string",
+                        "description": "A front-facing face photo: an external https:// URL or an avots-hosted /v1/files/<uuid> URL. A face-only crop is fine — the body is generated."
+                    },
+                    "country": {
+                        "type": "string",
+                        "description": "Destination country, e.g. \"Japan\", \"Morocco\", \"Italy\". Any country works; the 24 curated ones render with hand-picked landmarks."
+                    },
+                    "aspect": {
+                        "type": "string",
+                        "description": "3:4 (default, classic poster) or 9:16 (taller, Stories-native)."
+                    }
+                }
+            }
+        },
+        {
+            "name": "check_job",
+            "description": "Poll an async generation job (created by generate_video, or by avots web/Telegram). Free (no tokens). Returns status: queued|running|completed|failed. On completed: result URLs + final tokens_charged. On failed: error_message. Polling cadence: every 30 seconds for the first 3 minutes, then every 60 seconds. Keep polling for up to 10 minutes before assuming the job is stuck — provider queues can legitimately hold a video request 5+ minutes during peak hours. NEVER report failure to the user based on a slow status=\"queued\"; only on explicit status=\"failed\". The response does NOT include audio-track metadata — different models produce sound under different conditions and we do not probe the resulting media. Do not claim \"no sound\" or \"has sound\" in your reply; let the user play the file to find out.",
+            "inputSchema": {
+                "type": "object",
+                "required": [
+                    "job_id"
+                ],
+                "properties": {
+                    "job_id": {
+                        "type": "string",
+                        "description": "UUID returned by generate_video."
+                    }
+                }
+            }
+        }
+    ]
+}
