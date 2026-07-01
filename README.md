@@ -35,7 +35,7 @@ Ready-to-paste `mcp.json` snippets live under [`examples/`](examples/).
 
 ## What's in the server
 
-Ten tools, all listed in [docs/tools.md](docs/tools.md):
+Sixteen tools, all listed in [docs/tools.md](docs/tools.md):
 
 | Tool | Cost | What it does |
 | --- | --- | --- |
@@ -47,8 +47,14 @@ Ten tools, all listed in [docs/tools.md](docs/tools.md):
 | `face_swap_video` | ~500-2000 ⚡ | Async. Swap a face from a photo into a target video, keeping the original motion (pixverse). Two-step confirm. |
 | `generate_talking_avatar` | varies ⚡ | Async. Generate a portrait, speak your text (TTS), and lip-sync it into a talking-head video. Two-step confirm. |
 | `generate_audio` | ~50-800 ⚡ | Music (ElevenLabs Music, ACE-Step, Stable Audio) **or** spoken voice / TTS (ElevenLabs, preset or cloned voices). Async. |
+| `create_avatar` | free / ~200-500 ⚡ | Save a face as a reusable avatar - free with a photo URL, or generate one from a `portrait_prompt`. |
+| `list_avatars` | free | List your saved avatars by name/id (for `generate_talking_avatar` / `generate_vlog`). |
+| `generate_vlog` | varies ⚡ | Async. Short vertical talking-head vlog for Shorts/TikTok/Reels from a topic. Two-step confirm. |
+| `lipsync_video` | ~500-1500 ⚡ | Async. Re-sync a talking video's lips to new speech (dubbing / re-voicing). |
+| `create_montage` | ~200 ⚡ | Async. 4-25 photos into a reel with Ken Burns motion, crossfades and optional music (local render). |
+| `create_travel_poster` | ~200-500 ⚡ | Sync. Face photo + a country into a vintage travel poster (you on the country map). |
 | `create_calendar_event` | ~5 ⚡ | Turn natural language into an event on a linked Apple/Google calendar, or return an `.ics`. |
-| `check_job` | free | Poll an async job (video / face-swap / avatar) by `job_id`. |
+| `check_job` | free | Poll an async job (video / face-swap / avatar / vlog / lipsync / montage) by `job_id`. |
 
 > **About the two-step video flow.** Video is the most expensive tool. To avoid surprise spend, `generate_video` returns a preview card the first time it's called (no submit, no reserve). The client (e.g. Claude) shows the cost + alternative models with prices and asks the user. The user confirms, the client re-calls with the chosen `model` + `confirmed: true`, and only then does the job get submitted. On submit error the server returns the same alternatives card - it never silently swaps to a pricier model.
 

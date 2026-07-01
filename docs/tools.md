@@ -1,6 +1,6 @@
 # avots-mcp tools reference
 
-The server registers ten tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
+The server registers sixteen tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
 
 ## Free tools (no token cost)
 
@@ -14,7 +14,11 @@ Lists every active model on avots with its per-call cost in internal tokens. Acc
 
 ### `check_job`
 
-Polls an async generation job (created by `generate_video`, `face_swap_video`, or `generate_talking_avatar`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
+Polls an async generation job (created by `generate_video`, `face_swap_video`, `generate_talking_avatar`, `lipsync_video`, `generate_vlog`, or `create_montage`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
+
+### `list_avatars`
+
+Lists the user's saved avatars (reusable faces) by name and id, for use with `generate_talking_avatar` / `generate_vlog`. Free.
 
 ## Paid tools
 
@@ -110,6 +114,67 @@ Arguments:
 - `voice` - **TTS only**: a preset (Aria, Sarah, Charlotte, Matilda / Roger, George, Charlie, Brian) or the user's own cloned voice by name. Default Aria. Ignored by music models.
 
 Cost: ~100-800 ⚡.
+
+### `create_avatar`
+
+Save a face as a **reusable avatar** so later tools can reference it by name. Provide a ready portrait via `image_url` (FREE - the face is stored + validated) OR a `portrait_prompt` to generate one (costs image tokens). Returns the avatar `id` + `name`.
+
+Arguments:
+
+- `name` (required) - a short label, e.g. "Artur".
+- `image_url` - public https:// or avots-hosted `/v1/files/<uuid>` URL of a ready front-facing portrait of ONE person. Provide this OR `portrait_prompt`.
+- `portrait_prompt` - text description to generate the face instead (e.g. "a young woman with brown hair, warm smile").
+
+Cost: FREE with `image_url`; ~200-500 ⚡ with `portrait_prompt`.
+
+### `generate_vlog`
+
+Create a short **vertical talking-head vlog** for Shorts / TikTok / Reels - a character speaks a punchy line about a topic with native synced audio + lip-sync (powered by HappyHorse 1.0). Async - returns a `job_id`; poll `check_job` (usually 1-3 min). **Two-step confirmation** like `generate_video`.
+
+Arguments:
+
+- `topic` (required) - what the vlog is about; the server writes a short punchy spoken line from it.
+- `character` - text description of the on-camera character (server generates a matching portrait), OR `character_url` - a portrait photo URL to animate. One of the two is required.
+- `duration` - 3..15 s (default 5); `resolution` - `720p` (default) | `1080p`; `aspect` - `9:16` (default) | `1:1` | `16:9`.
+- `confirmed` - boolean, must be `true` to submit; omit/false for a cost-only preview.
+
+Cost: varies with duration + resolution; see the preview card.
+
+### `lipsync_video`
+
+Re-sync the lips in an existing talking **video** to NEW speech - video dubbing / re-voicing (powered by `fal-ai/sync-lipsync`). Async - returns a `job_id`; poll `check_job` (usually 1-3 min).
+
+Arguments:
+
+- `video_url` (required) - the talking-head video to re-sync (max ~20s, clear front-facing face). External https:// or avots-hosted.
+- `text` + `voice` (TTS mode) - the words to speak + a preset / cloned voice; OR `audio_url` (dub mode) - a ready audio track to sync to (when given, `text`/`voice` are ignored).
+- `confirmed` - boolean, must be `true` to submit.
+
+Cost: ~500-1500 ⚡.
+
+### `create_montage`
+
+Assemble a **slideshow reel** from 4-25 photos - Ken Burns zoom / pan on each photo + smooth crossfade transitions + an optional music track. Local render (no external model). Async - returns a `job_id`; poll `check_job` until `completed` (usually under a minute).
+
+Arguments:
+
+- `image_urls` (required) - 4..25 image URLs in play order (external https:// or avots-hosted `/v1/files/<uuid>`).
+- `music` - `upbeat` | `chill` | `epic` | `none` (default `none`).
+- `aspect` - `9:16` (default) | `1:1` | `16:9`.
+
+Cost: ~200 ⚡ flat.
+
+### `create_travel_poster`
+
+Turn a face photo into a vintage **travel poster** - the person sits on a giant map of a chosen country surrounded by its landmarks, a passport, stamps and the country name in big serif caps (the viral "Morocco / Japan" look). A face-only photo gets a full body drawn in. **Synchronous** - returns the hosted image URL directly (no `check_job`).
+
+Arguments:
+
+- `image_url` (required) - a front-facing face photo (external https:// or avots-hosted).
+- `country` (required) - e.g. "Japan", "Morocco", "Italy". Any country works; 24 curated ones render with hand-picked landmarks.
+- `aspect` - `3:4` (default) | `9:16`.
+
+Cost: ~200-500 ⚡. To animate it into a Stories clip, pass the returned URL to `generate_video` (image-to-video).
 
 ### `create_calendar_event`
 
