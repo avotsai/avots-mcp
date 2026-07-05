@@ -1,6 +1,6 @@
 # avots-mcp tools reference
 
-The server registers sixteen tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
+The server registers eighteen tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
 
 ## Free tools (no token cost)
 
@@ -14,11 +14,15 @@ Lists every active model on avots with its per-call cost in internal tokens. Acc
 
 ### `check_job`
 
-Polls an async generation job (created by `generate_video`, `face_swap_video`, `generate_talking_avatar`, `lipsync_video`, `generate_vlog`, or `create_montage`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
+Polls an async generation job (created by `generate_video`, `face_swap_video`, `generate_talking_avatar`, `lipsync_video`, `generate_vlog`, `create_montage`, or a video `recreate_trend`) by `job_id`. Returns `status` (`queued` | `running` | `completed` | `failed`), and on completion the result URLs + reconciled `tokens_charged`.
 
 ### `list_avatars`
 
 Lists the user's saved avatars (reusable faces) by name and id, for use with `generate_talking_avatar` / `generate_vlog`. Free.
+
+### `list_trends`
+
+Browses the avots Studio **trend catalog** (the "Творчество" showcase): curated viral templates - face-swap videos and images, ads, animations, surprise scenes. Entries with `swappable: true` are face-swap trends the user can star in with their own photo via `recreate_trend`. Accepts `category` (`image` | `video` | `all`) and `limit` (1..60). Returns id, category, short description, preview URL and catalog cost. Free.
 
 ## Paid tools
 
@@ -35,14 +39,15 @@ Cost: ~10-1000 ⚡ depending on model + prompt size.
 
 ### `generate_image`
 
-Synchronous image generation. Returns the image both as a native MCP `image` content block (base64) AND as a hosted URL. Blocks 5-30 seconds.
+Synchronous image generation - **or photo editing** when `image_urls` is provided (restyle, change background/outfit, merge subjects; runs on the Nano Banana editor family). Returns the image both as a native MCP `image` content block (base64) AND as a hosted URL. Blocks 5-30 seconds.
 
 Arguments:
 
 - `prompt` (required) - describe the picture: subject, style, lighting, composition, color palette.
 - `model` - one of: `google/gemini-2.5-flash-image` (default - best aspect support), `google/gemini-3-pro-image-preview` (best quality), `google/gemini-3.1-flash-image-preview` (latest), `openai/gpt-5-image-mini` (square only).
 - `aspect_ratio` - `1:1` | `16:9` | `9:16` | `4:3` | `3:4`. Default `1:1`.
-- `num_images` - 1..4. Default 1.
+- `num_images` - 1..4. Default 1. Ignored in edit mode (always 1).
+- `image_urls` - **edit mode**: 1-4 source photos to edit per the prompt. Each entry: external `https://` URL, `data:` URI, or an avots `/v1/files/<uuid>` URL of the user's uploaded photo. Only `google/*-image` models can edit - any other model choice is auto-swapped to `google/gemini-2.5-flash-image`. The source photo's aspect ratio is preserved unless `aspect_ratio` is set explicitly.
 
 Cost: ~200-500 ⚡ per image.
 
@@ -67,6 +72,8 @@ Arguments:
 - `resolution` - `480p` | `720p` | `1080p`. Default `720p`.
 - `audio` - boolean. Default `false`. Note: this only controls the REQUEST flag. Several models (Kling Pro, Veo 3.x, Sora) generate audio natively whether or not this flag is set; others (Seedance 2.0, Grok Imagine) produce silent video regardless. The server does NOT probe the resulting mp4.
 - `image_url` - optional first-frame image (avots-hosted URL or `data:` URI) for image-to-video. Seedance / Veo / Kling auto-swap to their i2v variant when this is set.
+- `image_urls` - **multiple reference photos**, only for models that accept several images: `fal:fal-ai/kling-video/v3/pro/image-to-video` takes up to 4 photos of ONE character (identity preserved), Seedance reference-to-video models take up to 9. Per-model limits: `list_models` → `input_spec.images.max`. For a slideshow out of many photos use `create_montage` instead.
+- `video_urls` - **motion-reference videos** ("repeat the movement from this clip"): Kling Elements takes 1 (≤15s), Seedance reference-to-video up to 3 (≤15s total). Check `input_spec.videos.max`. Not for editing an existing clip - that is `face_swap_video` / `lipsync_video`.
 - `confirmed` - boolean, default `false`. **Required `true` to submit**; otherwise you get the preview card.
 
 Cost: ~200-5000 ⚡ depending on model + duration + resolution.
@@ -175,6 +182,18 @@ Arguments:
 - `aspect` - `3:4` (default) | `9:16`.
 
 Cost: ~200-500 ⚡. To animate it into a Stories clip, pass the returned URL to `generate_video` (image-to-video).
+
+### `recreate_trend`
+
+Puts the user **into a trend** from `list_trends`: their face photo replaces the face in the trend's demo, scene and motion preserved. Only face-swap trends (`swappable: true`). **Image trends run synchronously** (~15-30s) and return the finished image URL directly. **Video trends use the two-step confirmation** (preview without `confirmed`, submit with `confirmed: true`) and return a `job_id` for `check_job` (typically 1-4 min).
+
+Arguments:
+
+- `trend_id` (required) - id from `list_trends`.
+- `face_image_url` (required) - the user's face photo: external URL, avots `/v1/files/<uuid>` URL, or `avatar:<id|name>` to reuse a saved avatar.
+- `confirmed` - video trends only; `true` to submit.
+
+Cost: image trends ~200-500 ⚡; video trends per second of the demo clip (the preview shows the estimate).
 
 ### `create_calendar_event`
 

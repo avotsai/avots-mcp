@@ -42,8 +42,8 @@ Sixteen tools, all listed in [docs/tools.md](docs/tools.md):
 | `check_balance` | free | Current tokens and subscription tier. |
 | `list_models` | free | All active models with per-call cost (filter by `chat`, `image`, `video`, `audio`). |
 | `chat` | ~10-1000 ⚡ | Send a prompt to any chat model. Useful for delegating to GPT, DeepSeek, Sonar, etc. |
-| `generate_image` | ~200-500 ⚡ | Synchronous image gen. Returns an inline `image` block (base64) and a hosted URL. |
-| `generate_video` | ~200-5000 ⚡ | Async video gen with **two-step confirmation**: first call previews the cost and alternative models; second call (`confirmed: true`) actually submits. |
+| `generate_image` | ~200-500 ⚡ | Synchronous image gen - or photo EDITING when `image_urls` is passed (restyle / change background / merge subjects). Returns an inline `image` block (base64) and a hosted URL. |
+| `generate_video` | ~200-5000 ⚡ | Async video gen with **two-step confirmation**: first call previews the cost and alternative models; second call (`confirmed: true`) actually submits. Multi-reference: `image_urls` (Kling Elements ≤4 photos, Seedance r2v ≤9) + `video_urls` motion refs. |
 | `face_swap_video` | ~500-2000 ⚡ | Async. Swap a face from a photo into a target video, keeping the original motion (pixverse). Two-step confirm. |
 | `generate_talking_avatar` | varies ⚡ | Async. Generate a portrait, speak your text (TTS), and lip-sync it into a talking-head video. Two-step confirm. |
 | `generate_audio` | ~50-800 ⚡ | Music (ElevenLabs Music, ACE-Step, Stable Audio) **or** spoken voice / TTS (ElevenLabs, preset or cloned voices). Async. |
@@ -53,8 +53,10 @@ Sixteen tools, all listed in [docs/tools.md](docs/tools.md):
 | `lipsync_video` | ~500-1500 ⚡ | Async. Re-sync a talking video's lips to new speech (dubbing / re-voicing). |
 | `create_montage` | ~200 ⚡ | Async. 4-25 photos into a reel with Ken Burns motion, crossfades and optional music (local render). |
 | `create_travel_poster` | ~200-500 ⚡ | Sync. Face photo + a country into a vintage travel poster (you on the country map). |
+| `list_trends` | free | Browse the Studio trend catalog; `swappable: true` entries take the user's face. |
+| `recreate_trend` | varies ⚡ | Star in a trend: face-swap the user's photo into a catalog template (image sync / video async + confirm). |
 | `create_calendar_event` | ~5 ⚡ | Turn natural language into an event on a linked Apple/Google calendar, or return an `.ics`. |
-| `check_job` | free | Poll an async job (video / face-swap / avatar / vlog / lipsync / montage) by `job_id`. |
+| `check_job` | free | Poll an async job (video / face-swap / avatar / vlog / lipsync / montage / video trend) by `job_id`. |
 
 > **About the two-step video flow.** Video is the most expensive tool. To avoid surprise spend, `generate_video` returns a preview card the first time it's called (no submit, no reserve). The client (e.g. Claude) shows the cost + alternative models with prices and asks the user. The user confirms, the client re-calls with the chosen `model` + `confirmed: true`, and only then does the job get submitted. On submit error the server returns the same alternatives card - it never silently swaps to a pricier model.
 
