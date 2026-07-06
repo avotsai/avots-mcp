@@ -51,6 +51,7 @@ Sixteen tools, all listed in [docs/tools.md](docs/tools.md):
 | `list_avatars` | free | List your saved avatars by name/id (for `generate_talking_avatar` / `generate_vlog`). |
 | `generate_vlog` | varies ⚡ | Async. Short vertical talking-head vlog for Shorts/TikTok/Reels from a topic. Two-step confirm. |
 | `lipsync_video` | ~500-1500 ⚡ | Async. Re-sync a talking video's lips to new speech (dubbing / re-voicing). |
+| `edit_video` | ~450 ⚡/sec | Async + confirm. Edit a ready video by text (Gemini Omni Flash): scene changes, the person, motion and ORIGINAL AUDIO stay. |
 | `create_montage` | ~200 ⚡ | Async. 4-25 photos into a reel with Ken Burns motion, crossfades and optional music (local render). |
 | `create_travel_poster` | ~200-500 ⚡ | Sync. Face photo + a country into a vintage travel poster (you on the country map). |
 | `list_trends` | free | Browse the Studio trend catalog; `swappable: true` entries take the user's face. |

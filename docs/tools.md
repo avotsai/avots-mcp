@@ -1,6 +1,6 @@
 # avots-mcp tools reference
 
-The server registers eighteen tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
+The server registers nineteen tools. The canonical schema lives at `tools/list` on `https://mcp.avots.ai/` - this page is the human-readable mirror, kept in sync by hand. If you need the machine-readable version with full JSON Schema, just call `tools/list` against the server with your Bearer key.
 
 ## Free tools (no token cost)
 
@@ -66,7 +66,7 @@ Async video generation with **two-step confirmation**.
 Arguments:
 
 - `prompt` (required) - scene description.
-- `model` - `orv:*` (OpenRouter Video) or `fal:*` (Fal.ai) family. Defaults to `orv:bytedance/seedance-2.0`. Common picks: `orv:bytedance/seedance-2.0` (cheap, great i2v), `orv:bytedance/seedance-1-5-pro` (cheapest, has audio), `orv:google/veo-3.1` / `orv:google/veo-3.1-fast` (Google), `orv:kwaivgi/kling-v3.0-pro` (premium), `orv:openai/sora-2-pro` (premium), `orv:x-ai/grok-imagine-video`, `fal:fal-ai/veo3` / `/fast`, `fal:fal-ai/kling-video/v2.1/{pro,standard}`.
+- `model` - `orv:*` (OpenRouter Video) or `fal:*` (Fal.ai) family. Defaults to `orv:bytedance/seedance-2.0`. Common picks: `orv:bytedance/seedance-2.0` (cheap, great i2v), `orv:bytedance/seedance-1-5-pro` (cheapest, has audio), `orv:google/veo-3.1` / `orv:google/veo-3.1-fast` (Google), `orv:kwaivgi/kling-v3.0-pro` (premium), `orv:openai/sora-2-pro` (premium), `orv:x-ai/grok-imagine-video`, `fal:fal-ai/veo3` / `/fast`, `fal:fal-ai/kling-video/v2.1/{pro,standard}`, `fal:google/gemini-omni-flash` (text to video WITH synchronized audio and dialogue), `fal:google/gemini-omni-flash/image-to-video` (photo to video WITH sound/speech).
 - `duration` - 1..15 seconds. Default 5.
 - `aspect_ratio` - `16:9` | `9:16` | `1:1` | `4:3` | `3:4` | `21:9`. Default `16:9`.
 - `resolution` - `480p` | `720p` | `1080p`. Default `720p`.
@@ -89,6 +89,18 @@ Arguments:
 - `confirmed` - boolean, default `false`. Required `true` to submit; otherwise you get the cost preview.
 
 Cost: ~500-2000 ⚡ (per second of the target clip).
+
+### `edit_video`
+
+**Edit an existing video with plain text** (Google Gemini Omni Flash Edit): change the background, style, objects or the whole scene - while the person, their motion, lip sync and the ORIGINAL AUDIO stay untouched. Async with the **two-step confirmation**: the preview call measures the real clip duration and quotes the exact cost; `confirmed: true` submits. Poll `check_job` (typically 1-4 min). Billed per second (~450 tokens/sec); clips longer than 30s are trimmed to the first 30s.
+
+Arguments:
+
+- `video_url` (required) - external `https://` URL or an avots-hosted `/v1/files/<uuid>` URL.
+- `prompt` (required) - what to change, in any language. The person and speech are preserved automatically.
+- `confirmed` - boolean; `true` to submit, omit for the duration + cost preview.
+
+Different from `face_swap_video` (replaces the FACE) and `lipsync_video` (changes WHAT IS SAID): `edit_video` changes the SCENE and keeps the person and their voice.
 
 ### `generate_talking_avatar`
 
