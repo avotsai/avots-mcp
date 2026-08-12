@@ -69,14 +69,14 @@ Async video generation, **two-step**. Call without `confirmed` for a preview car
 Arguments:
 
 - `prompt` (required) - scene description: subject, action, camera movement, lighting, style.
-- `model` - `orv:*` (OpenRouter Video) or `fal:*` (Fal.ai). Default `orv:bytedance/seedance-2.0` (cheap, great i2v character consistency). Common picks: `orv:bytedance/seedance-1-5-pro` (cheapest with audio), `orv:google/veo-3.1` / `-fast`, `orv:kwaivgi/kling-v3.0-pro`, `orv:openai/sora-2-pro`, `orv:x-ai/grok-imagine-video`, `fal:fal-ai/veo3` / `/fast`, `fal:fal-ai/kling-video/v2.1/{standard|pro}`, `fal:google/gemini-omni-flash` (t2v WITH synchronized audio + dialogue; `/image-to-video` for photo → talking video).
-- `duration` - 1..15 seconds. Default 5.
+- `model` - `orv:*` (OpenRouter Video) or `fal:*` (Fal.ai). Default `orv:bytedance/seedance-2.0` (cheap, great i2v character consistency, the only 1080p Seedance). Common picks: `orv:bytedance/seedance-2.5` (newest: 4-30s clips, multi-reference via `image_urls`/`video_urls` on the same id), `orv:bytedance/seedance-1-5-pro` (cheapest with audio), `orv:google/veo-3.1` / `-fast`, `orv:kwaivgi/kling-v3.0-{std|pro}`, `orv:openai/sora-2-pro`, `orv:x-ai/grok-imagine-video`, `fal:google/gemini-omni-flash` (t2v WITH synchronized audio + dialogue; `/image-to-video` for photo → talking video).
+- `duration` - 1..15 seconds on most models, up to 30 on `orv:bytedance/seedance-2.5` (the server clamps to the model's real range). Default 5.
 - `aspect_ratio` - `16:9` | `9:16` | `1:1` | `4:3` | `3:4` | `21:9`. Default `16:9`.
-- `resolution` - `480p` | `720p` | `1080p`. Default `720p`.
+- `resolution` - `480p` | `720p` | `1080p`. Default `720p`. 1080p only on `orv:bytedance/seedance-2.0` (~2.5x the 720p price).
 - `audio` - boolean request flag. Some models (Kling v3 Pro, Veo 3.x, Sora) produce audio natively regardless; others (Seedance 2.0, Grok Imagine) stay silent regardless.
 - `image_url` - optional first-frame image for image-to-video (i2v auto-swap).
-- `image_urls` - MULTIPLE reference photos, only for reference-capable models: `fal:fal-ai/kling-video/v3/pro/image-to-video` takes up to 4 photos of one character (identity preserved), Seedance reference-to-video models take up to 9. Check `list_models` → `input_spec.images.max`.
-- `video_urls` - MOTION-reference clips ("repeat the movement from this video"), only for reference-capable models (Kling v3 pro i2v: 1 clip ≤ 15s; Seedance r2v: up to 3, ≤ 15s total).
+- `image_urls` - MULTIPLE reference photos, only for reference-capable models: `fal:fal-ai/kling-video/v3/pro/image-to-video` takes up to 4 photos of one character (identity preserved), `orv:bytedance/seedance-2.5` up to 30, `orv:bytedance/seedance-2.0` up to 9. Check `list_models` → `input_spec.images.max`.
+- `video_urls` - MOTION-reference clips ("repeat the movement from this video"), only for reference-capable models (Kling v3 pro i2v: 1 clip ≤ 15s; `orv:bytedance/seedance-2.5`: up to 10, ≤ 30s total; `orv:bytedance/seedance-2.0`: up to 3).
 - `confirmed` - required `true` to submit.
 
 Cost: ~200-5000 ⚡ depending on model + duration + resolution.
