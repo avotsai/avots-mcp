@@ -37,7 +37,7 @@ Send a prompt to any active chat model on avots - useful when the user wants Cla
 Arguments:
 
 - `prompt` (required) - the user / system prompt.
-- `model` - OR model id (e.g. `anthropic/claude-opus-4.8`, `openai/gpt-5.5-pro`, `deepseek/deepseek-r1`, `perplexity/sonar-pro`). Default: `anthropic/claude-sonnet-4.6`.
+- `model` - OR model id (e.g. `anthropic/claude-opus-4.8`, `openai/gpt-5.5-pro`, `deepseek/deepseek-r1`, `perplexity/sonar-pro`). Default: `anthropic/claude-sonnet-5`.
 
 Cost: ~10-1000 ⚡ depending on model + prompt size.
 
@@ -72,7 +72,7 @@ Arguments:
 - `model` - `orv:*` (OpenRouter Video) or `fal:*` (Fal.ai). Default `orv:bytedance/seedance-2.0` (cheap, great i2v character consistency, the only 1080p Seedance). Common picks: `orv:bytedance/seedance-2.5` (newest: 4-30s clips, multi-reference via `image_urls`/`video_urls` on the same id), `orv:bytedance/seedance-1-5-pro` (cheapest with audio), `orv:google/veo-3.1` / `-fast`, `orv:kwaivgi/kling-v3.0-{std|pro}`, `orv:openai/sora-2-pro`, `orv:x-ai/grok-imagine-video`, `fal:google/gemini-omni-flash` (t2v WITH synchronized audio + dialogue; `/image-to-video` for photo → talking video).
 - `duration` - 1..15 seconds on most models, up to 30 on `orv:bytedance/seedance-2.5` (the server clamps to the model's real range). Default 5.
 - `aspect_ratio` - `16:9` | `9:16` | `1:1` | `4:3` | `3:4` | `21:9`. Default `16:9`.
-- `resolution` - `480p` | `720p` | `1080p`. Default `720p`. 1080p only on `orv:bytedance/seedance-2.0` (~2.5x the 720p price).
+- `resolution` - `480p` | `720p` | `1080p`. Default `720p`. 1080p only on `orv:bytedance/seedance-2.0` (~2.5x the 720p price). Anything above that is refused rather than quietly downgraded: we have no price for those tiers.
 - `audio` - boolean request flag. Some models (Kling v3 Pro, Veo 3.x, Sora) produce audio natively regardless; others (Seedance 2.0, Grok Imagine) stay silent regardless.
 - `image_url` - optional first-frame image for image-to-video (i2v auto-swap).
 - `image_urls` - MULTIPLE reference photos, only for reference-capable models: `fal:fal-ai/kling-video/v3/pro/image-to-video` takes up to 4 photos of one character (identity preserved), `orv:bytedance/seedance-2.5` up to 30, `orv:bytedance/seedance-2.0` up to 9. Check `list_models` → `input_spec.images.max`.
@@ -91,7 +91,7 @@ Cost: per second of the target clip, roughly 500-2000 ⚡.
 
 ### `edit_video`
 
-Edit an existing video with plain-text instructions (Gemini Omni Flash Edit): change background, style, objects or scene - while the person, their motion, lip-sync and the ORIGINAL AUDIO stay untouched. Async, **two-step** (the preview measures the clip and returns the exact cost). Billed per second (~450 ⚡/sec); inputs longer than 30s are trimmed.
+Edit an existing video with plain-text instructions (Gemini Omni Flash Edit): change background, style, objects or scene - while the person, their motion, lip-sync and the ORIGINAL AUDIO stay untouched. Async, **two-step** (the preview measures the clip and returns the exact cost). Billed per second (~260 ⚡/sec); the model caps output at ~10s, so only the first 10s of the input is processed and billed.
 
 Arguments: `video_url` (required), `prompt` (required), `confirmed`.
 
